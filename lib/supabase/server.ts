@@ -19,7 +19,7 @@ export async function createClient() {
       getAll() {
         return cs.getAll();
       },
-      setAll(list) {
+      setAll(list: { name: string; value: string; options?: Parameters<typeof cs.set>[2] }[]) {
         try {
           list.forEach(({ name, value, options }) => cs.set(name, value, options));
         } catch {}
