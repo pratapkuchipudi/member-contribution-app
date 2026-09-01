@@ -6,12 +6,20 @@ function supabaseKey() {
   return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || '';
 }
 
+function useLocalDb() {
+  return process.env.USE_LOCAL_DB === 'true' || process.env.USE_LOCAL_DB === '1';
+}
+
 function hasSupabase() {
   return Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && supabaseKey());
 }
 
+export function isLocalDb() {
+  return useLocalDb() || !hasSupabase();
+}
+
 export async function createClient() {
-  if (!hasSupabase()) return createLocalClient();
+  if (isLocalDb()) return createLocalClient();
 
   const cs = await cookies();
   return createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, supabaseKey(), {

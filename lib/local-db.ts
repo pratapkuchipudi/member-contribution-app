@@ -7,6 +7,8 @@ type Store = {
   payments: Row[];
   member_notes: Row[];
   sponsors: Row[];
+  sponsor_payments: Row[];
+  sponsor_notes: Row[];
   app_roles: Row[];
 };
 
@@ -14,7 +16,7 @@ const dataDir = join(process.cwd(), 'data');
 const dbPath = join(dataDir, 'local-db.json');
 
 function emptyStore(): Store {
-  return { members: [], payments: [], member_notes: [], sponsors: [], app_roles: [] };
+  return { members: [], payments: [], member_notes: [], sponsors: [], sponsor_payments: [], sponsor_notes: [], app_roles: [] };
 }
 
 function now() {
@@ -67,10 +69,38 @@ function sponsorsWithMembers(store: Store) {
   });
 }
 
+function sponsorSummaries(store: Store) {
+  return store.sponsors.map((s) => {
+    const paid = store.sponsor_payments
+      .filter((p) => p.sponsor_id === s.id)
+      .reduce((a, p) => a + Number(p.amount || 0), 0);
+    const expected = Number(s.expected_amount || 0);
+    const member = store.members.find((m) => m.id === s.member_id);
+    return {
+      ...s,
+      total_paid: paid,
+      pending_amount: Math.max(expected - paid, 0),
+      payment_status: paymentStatus(expected, paid),
+      referred_by: member?.name || '-',
+      members: member ? { name: member.name } : null,
+    };
+  });
+}
+
 function rowsFor(table: string, store: Store): Row[] {
   if (table === 'member_financial_summary') return summaries(store);
+  if (table === 'sponsor_financial_summary') return sponsorSummaries(store);
   if (table === 'sponsors') return sponsorsWithMembers(store);
   return (store[table as keyof Store] || []).map((r) => ({ ...r }));
+}
+
+function baseTable(table: string): keyof Store | null {
+  if (table === 'members' || table === 'member_financial_summary') return 'members';
+  if (table === 'sponsors' || table === 'sponsor_financial_summary') return 'sponsors';
+  if (table === 'payments' || table === 'member_notes' || table === 'sponsor_payments' || table === 'sponsor_notes' || table === 'app_roles') {
+    return table;
+  }
+  return null;
 }
 
 class Query {
@@ -78,6 +108,8 @@ class Query {
   private filters: Array<[string, any]> = [];
   private sort: { column: string; ascending: boolean } | null = null;
   private wantSingle = false;
+  private mode: 'select' | 'update' | 'delete' = 'select';
+  private patch: Row = {};
 
   constructor(table: string) {
     this.table = table;
@@ -102,6 +134,11 @@ class Query {
     return this;
   }
 
+  maybeSingle() {
+    this.wantSingle = true;
+    return this;
+  }
+
   async insert(row: Row) {
     const store = read();
     const table = this.table as keyof Store;
@@ -115,6 +152,49 @@ class Query {
     store[table].push(record);
     write(store);
     return { data: record, error: null };
+  }
+
+  update(row: Row) {
+    this.mode = 'update';
+    this.patch = row;
+    return this;
+  }
+
+  delete() {
+    this.mode = 'delete';
+    return this;
+  }
+
+  private matches(row: Row) {
+    return this.filters.every(([column, value]) => String(row[column]) === String(value));
+  }
+
+  private runUpdate() {
+    const table = baseTable(this.table);
+    if (!table) return { data: null, error: { message: `Unknown table ${this.table}` } };
+    const store = read();
+    store[table] = store[table].map((row) => (this.matches(row) ? { ...row, ...this.patch, updated_at: now() } : row));
+    write(store);
+    return { data: null, error: null };
+  }
+
+  private runDelete() {
+    const table = baseTable(this.table);
+    if (!table) return { data: null, error: { message: `Unknown table ${this.table}` } };
+    const store = read();
+    const removed = store[table].filter((row) => this.matches(row)).map((row) => row.id);
+    store[table] = store[table].filter((row) => !this.matches(row));
+    if (table === 'members') {
+      store.payments = store.payments.filter((row) => !removed.includes(row.member_id));
+      store.member_notes = store.member_notes.filter((row) => !removed.includes(row.member_id));
+      store.sponsors = store.sponsors.map((row) => (removed.includes(row.member_id) ? { ...row, member_id: null } : row));
+    }
+    if (table === 'sponsors') {
+      store.sponsor_payments = store.sponsor_payments.filter((row) => !removed.includes(row.sponsor_id));
+      store.sponsor_notes = store.sponsor_notes.filter((row) => !removed.includes(row.sponsor_id));
+    }
+    write(store);
+    return { data: null, error: null };
   }
 
   private execute() {
@@ -136,9 +216,10 @@ class Query {
     return { data: rows, error: null };
   }
 
-  then<T>(resolve: (value: { data: any; error: null }) => T, reject?: (reason: any) => T) {
+  then<T>(resolve: (value: { data: any; error: any }) => T, reject?: (reason: any) => T) {
     try {
-      return Promise.resolve(resolve(this.execute()));
+      const result = this.mode === 'update' ? this.runUpdate() : this.mode === 'delete' ? this.runDelete() : this.execute();
+      return Promise.resolve(resolve(result));
     } catch (err) {
       if (reject) return Promise.resolve(reject(err));
       return Promise.reject(err);
