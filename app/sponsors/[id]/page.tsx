@@ -1,8 +1,9 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { addSponsorPayment, addSponsorNote, deleteSponsor } from './actions';
+import { addSponsorPayment, addSponsorNote, deleteSponsor, deleteSponsorPayment } from './actions';
 import ConfirmButton from '@/app/confirm-button';
+import DeleteReasonForm from '@/app/delete-reason-form';
 import { Money } from '@/app/money';
 import { isAdmin, requireSponsorAccess } from '@/lib/auth';
 
@@ -93,7 +94,16 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <h2 className="font-semibold">Payment History</h2>
         {p.map((x: any) => (
           <div className="border-b py-2 text-sm" key={x.id}>
-            <Money value={x.amount} tone="paid" /> • {x.payment_date} • {x.payment_method || 'Method not set'}
+            <div>
+              <Money value={x.amount} tone="paid" /> • {x.payment_date} • {x.payment_method || 'Method not set'}
+              {x.notes ? <span className="text-slate-500"> • {x.notes}</span> : null}
+            </div>
+            {admin ? (
+              <DeleteReasonForm
+                action={deleteSponsorPayment.bind(null, id, x.id)}
+                confirmText={`Delete this ${Number(x.amount || 0).toLocaleString('en-IN')} payment?`}
+              />
+            ) : null}
           </div>
         ))}
       </div>

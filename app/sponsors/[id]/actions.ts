@@ -21,6 +21,25 @@ export async function addSponsorPayment(id: string, fd: FormData) {
   revalidatePath('/');
 }
 
+export async function deleteSponsorPayment(sponsorId: string, paymentId: string, fd: FormData) {
+  const session = await requireAdmin();
+  const reason = String(fd.get('reason') || '').trim();
+  if (!reason) throw new Error('Enter a reason to delete this payment.');
+  const s = await createClient();
+  const { data: payment } = await s.from('sponsor_payments').select('*').eq('id', paymentId).maybeSingle();
+  if (!payment) return;
+  const { error } = await s.from('sponsor_payments').delete().eq('id', paymentId);
+  if (error) throw new Error(error.message);
+  const amount = '₹' + Number(payment.amount || 0).toLocaleString('en-IN');
+  await s.from('sponsor_notes').insert({
+    sponsor_id: sponsorId,
+    note: `Payment deleted: ${amount} on ${payment.payment_date || '-'} (${payment.payment_method || 'method not set'}). Reason: ${reason}. Deleted by ${session.id}.`,
+  });
+  revalidatePath(`/sponsors/${sponsorId}`);
+  revalidatePath('/sponsors');
+  revalidatePath('/');
+}
+
 export async function addSponsorNote(id: string, fd: FormData) {
   await requireAdmin();
   const s = await createClient();
