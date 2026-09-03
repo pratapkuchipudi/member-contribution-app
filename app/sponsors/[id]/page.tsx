@@ -4,12 +4,15 @@ import { createClient } from '@/lib/supabase/server';
 import { addSponsorPayment, addSponsorNote, deleteSponsor } from './actions';
 import ConfirmButton from '@/app/confirm-button';
 import { Money } from '@/app/money';
+import { isAdmin, requireSponsorAccess } from '@/lib/auth';
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const s = await createClient();
   const { data: m } = await s.from('sponsor_financial_summary').select('*').eq('id', id).maybeSingle();
   if (!m) notFound();
+  const session = await requireSponsorAccess(m.member_id);
+  const admin = isAdmin(session);
   const { data: payments } = await s.from('sponsor_payments').select('*').eq('sponsor_id', id).order('payment_date', { ascending: false });
   const { data: notes } = await s.from('sponsor_notes').select('*').eq('sponsor_id', id).order('created_at', { ascending: false });
   const p = payments ?? [];
@@ -32,6 +35,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             )}
           </p>
         </div>
+        {admin ? (
         <div className="flex items-center gap-3 text-sm">
           <Link className="rounded bg-slate-900 px-3 py-2 text-white" href={`/sponsors/${id}/edit`}>
             Edit
@@ -44,6 +48,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             Delete
           </ConfirmButton>
         </div>
+        ) : null}
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
         <div className="rounded-xl border bg-white p-4">
@@ -69,7 +74,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <b>{m.status}</b>
         </div>
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
+      {admin ? <div className="grid gap-5 lg:grid-cols-2">
         <form action={addSponsorPayment.bind(null, id)} className="space-y-2 rounded-xl border bg-white p-4">
           <h2 className="font-semibold">Add Payment</h2>
           <input name="amount" type="number" step="0.01" min="0.01" required placeholder="Amount" className="w-full rounded border px-3 py-2" />
@@ -83,7 +88,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <textarea name="note" required rows={5} className="w-full rounded border px-3 py-2" />
           <button className="rounded bg-slate-900 px-4 py-2 text-white">Add Note</button>
         </form>
-      </div>
+      </div> : null}
       <div className="rounded-xl border bg-white p-4">
         <h2 className="font-semibold">Payment History</h2>
         {p.map((x: any) => (

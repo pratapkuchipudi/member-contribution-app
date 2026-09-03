@@ -5,9 +5,12 @@ import { addPayment, addNote, deleteMember } from './actions';
 import ConfirmButton from '@/app/confirm-button';
 import ReferredSponsorsTable, { sponsorTotals } from '@/app/sponsors/referred-table';
 import { Money } from '@/app/money';
+import { isAdmin, requireMemberAccess } from '@/lib/auth';
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await requireMemberAccess(id);
+  const admin = isAdmin(session);
   const s = await createClient();
   const { data: m } = await s.from('member_financial_summary').select('*').eq('id', id).maybeSingle();
   if (!m) notFound();
@@ -24,18 +27,21 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <div>
           <h1 className="text-2xl font-bold">{m.name}</h1>
           <p>{m.phone}</p>
+          {m.login_id ? <p className="text-sm text-slate-500">Login ID <span className="font-mono font-semibold text-slate-800">{m.login_id}</span></p> : null}
         </div>
         <div className="flex items-center gap-3 text-sm">
           <Link className="rounded bg-slate-900 px-3 py-2 text-white" href={`/members/${id}/edit`}>
             Edit
           </Link>
-          <ConfirmButton
-            action={deleteMember.bind(null, id)}
-            message={`Delete ${m.name}? This also removes their payments and notes.`}
-            className="rounded border border-red-300 px-3 py-2 text-red-600"
-          >
-            Delete
-          </ConfirmButton>
+          {admin ? (
+            <ConfirmButton
+              action={deleteMember.bind(null, id)}
+              message={`Delete ${m.name}? This also removes their payments and notes.`}
+              className="rounded border border-red-300 px-3 py-2 text-red-600"
+            >
+              Delete
+            </ConfirmButton>
+          ) : null}
         </div>
       </div>
       <div className="grid gap-3 sm:grid-cols-4">
@@ -95,7 +101,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         </div>
         <ReferredSponsorsTable sponsors={referred} />
       </div>
-      <div className="grid gap-5 lg:grid-cols-2">
+      {admin ? <div className="grid gap-5 lg:grid-cols-2">
         <form action={addPayment.bind(null, id)} className="space-y-2 rounded-xl border bg-white p-4">
           <h2 className="font-semibold">Add Payment</h2>
           <input name="amount" type="number" step="0.01" min="0.01" required placeholder="Amount" className="w-full rounded border px-3 py-2" />
@@ -109,7 +115,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <textarea name="note" required rows={5} className="w-full rounded border px-3 py-2" />
           <button className="rounded bg-slate-900 px-4 py-2 text-white">Add Note</button>
         </form>
-      </div>
+      </div> : null}
       <div className="rounded-xl border bg-white p-4">
         <h2 className="font-semibold">Payment History</h2>
         {p.map((x: any) => (

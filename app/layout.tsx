@@ -1,6 +1,6 @@
 import './globals.css';
 import Link from 'next/link';
-import { getSession, sessionLabel } from '@/lib/auth';
+import { getSession, isAdmin, sessionLabel } from '@/lib/auth';
 import { isLocalDb } from '@/lib/supabase/server';
 import { logout } from './login/actions';
 import ConventionBanner from './convention-banner';
@@ -16,6 +16,8 @@ export default async function Layout({ children }: { children: React.ReactNode }
     );
   }
 
+  const admin = isAdmin(session);
+
   return (
     <html>
       <body>
@@ -24,16 +26,25 @@ export default async function Layout({ children }: { children: React.ReactNode }
             <div>
               <b>Member Contribution Tracker</b>
               <div className="text-xs text-slate-500">
-                Members • Payments • Sponsors
+                {admin ? 'Members • Payments • Sponsors' : 'My details • My sponsors'}
                 {isLocalDb() ? ' • Local test DB' : ''}
               </div>
             </div>
             <nav className="flex items-center gap-4 text-sm">
               <Link href="/">Dashboard</Link>
-              <Link href="/members">Members</Link>
-              <Link href="/referrals">Referrals</Link>
-              <Link href="/sponsors">Sponsors</Link>
-              <Link href="/roles">Roles</Link>
+              {admin ? (
+                <>
+                  <Link href="/members">Members</Link>
+                  <Link href="/referrals">Referrals</Link>
+                  <Link href="/sponsors">Sponsors</Link>
+                  <Link href="/roles">Roles</Link>
+                </>
+              ) : (
+                <>
+                  <Link href={`/members/${session.memberId}`}>My details</Link>
+                  <Link href="/sponsors">My sponsors</Link>
+                </>
+              )}
               <span className="text-slate-500">
                 {name} · {session.id}
               </span>

@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth';
 import { createSponsor } from '../actions';
 
 export default async function Page() {
+  await requireAdmin();
   const s = await createClient();
   const { data: members } = await s.from('members').select('id,name').order('name');
   const m = members ?? [];

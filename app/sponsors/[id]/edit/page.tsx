@@ -1,11 +1,13 @@
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth';
 import { updateSponsor } from '../actions';
 
 const statuses = ['New', 'Contacted', 'Meeting Scheduled', 'Interested', 'Confirmed', 'Paid', 'Not Interested'];
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  await requireAdmin();
   const s = await createClient();
   const { data: m } = await s.from('sponsors').select('*').eq('id', id).maybeSingle();
   if (!m) notFound();

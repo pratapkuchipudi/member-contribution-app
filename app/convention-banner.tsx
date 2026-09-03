@@ -1,10 +1,13 @@
 import { createClient } from '@/lib/supabase/server';
+import { getSession, isAdmin } from '@/lib/auth';
 import { TARGET_FUND, fundTotals } from '@/lib/fund';
 
 const money = (v: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(v);
 
 export default async function ConventionBanner() {
+  const session = await getSession();
+  if (!isAdmin(session)) return null;
   const s = await createClient();
   const { data: members } = await s.from('member_financial_summary').select('proposed_amount,total_paid,pending_amount');
   const { data: sponsors } = await s.from('sponsor_financial_summary').select('expected_amount,total_paid,pending_amount');

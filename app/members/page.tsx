@@ -1,10 +1,14 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth';
+import { ensureMemberLoginIds } from '@/lib/login-id';
 import { deleteMember } from './[id]/actions';
 import ConfirmButton from '@/app/confirm-button';
 import { Money } from '@/app/money';
 
 export default async function Page() {
+  await requireAdmin();
+  await ensureMemberLoginIds();
   const s = await createClient();
   const { data } = await s.from('member_financial_summary').select('*').order('name');
   const { data: sponsors } = await s.from('sponsor_financial_summary').select('*');
@@ -31,7 +35,7 @@ export default async function Page() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              {['Name', 'Phone', 'Proposed', 'Paid', 'Pending', 'Sponsors', 'Earned', 'Promised Date', 'Status', 'Actions'].map((h) => (
+              {['Name', 'Login ID', 'Phone', 'Proposed', 'Paid', 'Pending', 'Sponsors', 'Earned', 'Promised Date', 'Status', 'Actions'].map((h) => (
                 <th className="px-3 py-2 text-left" key={h}>
                   {h}
                 </th>
@@ -49,6 +53,7 @@ export default async function Page() {
                     {x.name}
                   </Link>
                 </td>
+                <td className="px-3 py-2 font-mono">{x.login_id || '-'}</td>
                 <td className="px-3 py-2">{x.phone}</td>
                 <td className="px-3 py-2">
                   <Money value={x.proposed_amount} tone="expected" />

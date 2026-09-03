@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
+import { requireAdmin } from '@/lib/auth';
 import ReferralList from './referral-list';
 
 export default async function Page() {
+  await requireAdmin();
   const s = await createClient();
   const { data: members } = await s.from('member_financial_summary').select('*').order('name');
   const { data: sponsors } = await s.from('sponsor_financial_summary').select('*').order('name');

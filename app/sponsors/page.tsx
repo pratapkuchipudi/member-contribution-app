@@ -1,29 +1,34 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { isAdmin, requireSession } from '@/lib/auth';
 import { deleteSponsor } from './[id]/actions';
 import ConfirmButton from '@/app/confirm-button';
 import { Money } from '@/app/money';
 
 export default async function Page() {
+  const session = await requireSession();
+  const admin = isAdmin(session);
   const s = await createClient();
   const { data } = await s.from('sponsor_financial_summary').select('*').order('name');
-  const rows = data ?? [];
+  const rows = (data ?? []).filter((x: any) => admin || x.member_id === session.memberId);
   return (
     <div>
       <div className="mb-4 flex justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Sponsors</h1>
+          <h1 className="text-2xl font-bold">{admin ? 'Sponsors' : 'My sponsors'}</h1>
           <p className="text-sm text-slate-500">Referrals, expected amounts and payments</p>
         </div>
-        <Link className="rounded-lg bg-slate-900 px-4 py-2 text-white" href="/sponsors/new">
-          Add Sponsor
-        </Link>
+        {admin ? (
+          <Link className="rounded-lg bg-slate-900 px-4 py-2 text-white" href="/sponsors/new">
+            Add Sponsor
+          </Link>
+        ) : null}
       </div>
       <div className="overflow-x-auto rounded-xl border bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              {['Name', 'Phone', 'Address', 'Referrer', 'Expected', 'Paid', 'Pending', 'Meeting Date', 'Status', 'Actions'].map((h) => (
+              {[...(admin ? ['Name', 'Phone', 'Address', 'Referrer', 'Expected', 'Paid', 'Pending', 'Meeting Date', 'Status', 'Actions'] : ['Name', 'Phone', 'Address', 'Expected', 'Paid', 'Pending', 'Meeting Date', 'Status'])].map((h) => (
                 <th className="px-3 py-2 text-left" key={h}>
                   {h}
                 </th>
@@ -40,6 +45,7 @@ export default async function Page() {
                 </td>
                 <td className="px-3 py-2">{x.phone}</td>
                 <td className="max-w-xs px-3 py-2">{x.address || '-'}</td>
+                {admin ? (
                 <td className="px-3 py-2">
                   {x.member_id && x.referred_by && x.referred_by !== '-' ? (
                     <Link className="underline" href={`/members/${x.member_id}`}>
@@ -49,6 +55,7 @@ export default async function Page() {
                     <span className="text-slate-400">-</span>
                   )}
                 </td>
+                ) : null}
                 <td className="px-3 py-2">
                   <Money value={x.expected_amount} tone="expected" />
                 </td>
@@ -60,6 +67,7 @@ export default async function Page() {
                 </td>
                 <td className="px-3 py-2">{x.meeting_date || '-'}</td>
                 <td className="px-3 py-2">{x.status}</td>
+                {admin ? (
                 <td className="px-3 py-2">
                   <div className="flex items-center gap-3">
                     <Link className="underline" href={`/sponsors/${x.id}/edit`}>
@@ -74,6 +82,7 @@ export default async function Page() {
                     </ConfirmButton>
                   </div>
                 </td>
+                ) : null}
               </tr>
             ))}
           </tbody>
