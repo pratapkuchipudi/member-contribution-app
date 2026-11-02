@@ -23,6 +23,7 @@ export default async function Page() {
             </option>
           ))}
         </select>
+        <label className="block text-xs text-slate-500">Date of Meet</label>
         <input name="meeting_date" type="date" className="w-full rounded border px-3 py-2" />
         <select name="status" className="w-full rounded border px-3 py-2">
           {['New', 'Contacted', 'Meeting Scheduled', 'Interested', 'Confirmed', 'Paid', 'Not Interested'].map((x) => (

@@ -20,6 +20,7 @@ export async function addPayment(id: string, fd: FormData) {
   revalidatePath(`/members/${id}`);
   revalidatePath('/members');
   revalidatePath('/');
+  revalidatePath('/reports');
 }
 
 export async function deletePayment(memberId: string, paymentId: string, fd: FormData) {
@@ -39,6 +40,7 @@ export async function deletePayment(memberId: string, paymentId: string, fd: For
   revalidatePath(`/members/${memberId}`);
   revalidatePath('/members');
   revalidatePath('/');
+  revalidatePath('/reports');
 }
 
 export async function addNote(id: string, fd: FormData) {
@@ -49,6 +51,20 @@ export async function addNote(id: string, fd: FormData) {
   const { error } = await s.from('member_notes').insert({ member_id: id, note });
   if (error) throw new Error(error.message);
   revalidatePath(`/members/${id}`);
+}
+
+export async function updateMeetingDate(id: string, fd: FormData) {
+  await requireAdmin();
+  const s = await createClient();
+  const { error } = await s.from('members').update({
+    meeting_date: String(fd.get('meeting_date') || '') || null,
+  }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/members/${id}`);
+  revalidatePath('/members');
+  revalidatePath('/referrals');
+  revalidatePath('/');
+  revalidatePath('/reports');
 }
 
 export async function updateMember(id: string, fd: FormData) {
@@ -62,6 +78,7 @@ export async function updateMember(id: string, fd: FormData) {
   if (isAdmin(session)) {
     patch.proposed_amount = Number(fd.get('proposed_amount') || 0);
     patch.proposed_date = String(fd.get('proposed_date') || '') || null;
+    patch.meeting_date = String(fd.get('meeting_date') || '') || null;
   }
   const { error } = await s.from('members').update(patch).eq('id', id);
   if (error) throw new Error(error.message);
@@ -69,6 +86,7 @@ export async function updateMember(id: string, fd: FormData) {
   revalidatePath('/members');
   revalidatePath('/roles');
   revalidatePath('/');
+  revalidatePath('/reports');
   redirect(`/members/${id}`);
 }
 

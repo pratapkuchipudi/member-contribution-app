@@ -37,6 +37,7 @@ export default async function Layout({ children }: { children: React.ReactNode }
                   <Link href="/members">Members</Link>
                   <Link href="/referrals">Referrals</Link>
                   <Link href="/sponsors">Sponsors</Link>
+                  <Link href="/reports">Reports</Link>
                   <Link href="/roles">Roles</Link>
                 </>
               ) : (

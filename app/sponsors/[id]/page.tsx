@@ -1,9 +1,10 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { addSponsorPayment, addSponsorNote, deleteSponsor, deleteSponsorPayment } from './actions';
+import { addSponsorPayment, addSponsorNote, deleteSponsor, deleteSponsorPayment, updateSponsorMeetingDate } from './actions';
 import ConfirmButton from '@/app/confirm-button';
 import DeleteReasonForm from '@/app/delete-reason-form';
+import MeetingDateForm from '@/app/meeting-date-form';
 import { Money } from '@/app/money';
 import { isAdmin, requireSponsorAccess } from '@/lib/auth';
 
@@ -34,6 +35,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             ) : (
               '-'
             )}
+          </p>
+          <p className="text-sm text-slate-500">
+            Date of Meet {m.meeting_date ? String(m.meeting_date).slice(0, 10) : 'Not set'}
           </p>
         </div>
         {admin ? (
@@ -75,6 +79,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <b>{m.status}</b>
         </div>
       </div>
+      {admin ? <MeetingDateForm action={updateSponsorMeetingDate.bind(null, id)} defaultValue={m.meeting_date} /> : null}
       {admin ? <div className="grid gap-5 lg:grid-cols-2">
         <form action={addSponsorPayment.bind(null, id)} className="space-y-2 rounded-xl border bg-white p-4">
           <h2 className="font-semibold">Add Payment</h2>

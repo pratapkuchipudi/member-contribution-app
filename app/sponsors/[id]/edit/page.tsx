@@ -29,6 +29,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
             </option>
           ))}
         </select>
+        <label className="block text-xs text-slate-500">Date of Meet</label>
         <input name="meeting_date" type="date" defaultValue={String(m.meeting_date || '').slice(0, 10)} className="w-full rounded border px-3 py-2" />
         <select name="status" defaultValue={m.status || 'New'} className="w-full rounded border px-3 py-2">
           {statuses.map((x) => (

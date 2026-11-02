@@ -20,6 +20,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         {admin ? (
           <>
             <input name="proposed_amount" required type="number" min="0" step="0.01" defaultValue={m.proposed_amount} placeholder="Proposed Amount" className="w-full rounded border px-3 py-2" />
+            <label className="block text-xs text-slate-500">Date of Meet</label>
+            <input name="meeting_date" type="date" defaultValue={String(m.meeting_date || '').slice(0, 10)} className="w-full rounded border px-3 py-2" />
+            <label className="block text-xs text-slate-500">Promised Date</label>
             <input name="proposed_date" type="date" defaultValue={String(m.proposed_date || '').slice(0, 10)} className="w-full rounded border px-3 py-2" />
           </>
         ) : null}

@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
-import { addPayment, addNote, deleteMember, deletePayment } from './actions';
+import { addPayment, addNote, deleteMember, deletePayment, updateMeetingDate } from './actions';
 import ConfirmButton from '@/app/confirm-button';
 import DeleteReasonForm from '@/app/delete-reason-form';
 import ReferredSponsorsTable, { sponsorTotals } from '@/app/sponsors/referred-table';
+import MeetingDateForm from '@/app/meeting-date-form';
 import { Money } from '@/app/money';
 import { isAdmin, requireMemberAccess } from '@/lib/auth';
 
@@ -29,6 +30,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <h1 className="text-2xl font-bold">{m.name}</h1>
           <p>{m.phone}</p>
           {m.login_id ? <p className="text-sm text-slate-500">Login ID <span className="font-mono font-semibold text-slate-800">{m.login_id}</span></p> : null}
+          <p className="text-sm text-slate-500">
+            Date of Meet {m.meeting_date ? String(m.meeting_date).slice(0, 10) : 'Not set'}
+          </p>
         </div>
         <div className="flex items-center gap-3 text-sm">
           <Link className="rounded bg-slate-900 px-3 py-2 text-white" href={`/members/${id}/edit`}>
@@ -69,6 +73,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           <b>{m.payment_status}</b>
         </div>
       </div>
+      {admin ? <MeetingDateForm action={updateMeetingDate.bind(null, id)} defaultValue={m.meeting_date} /> : null}
       <div id="sponsors" className="rounded-xl border bg-white">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b px-4 py-3">
           <div>

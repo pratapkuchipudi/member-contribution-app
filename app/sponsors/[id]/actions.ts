@@ -19,6 +19,7 @@ export async function addSponsorPayment(id: string, fd: FormData) {
   revalidatePath(`/sponsors/${id}`);
   revalidatePath('/sponsors');
   revalidatePath('/');
+  revalidatePath('/reports');
 }
 
 export async function deleteSponsorPayment(sponsorId: string, paymentId: string, fd: FormData) {
@@ -38,6 +39,7 @@ export async function deleteSponsorPayment(sponsorId: string, paymentId: string,
   revalidatePath(`/sponsors/${sponsorId}`);
   revalidatePath('/sponsors');
   revalidatePath('/');
+  revalidatePath('/reports');
 }
 
 export async function addSponsorNote(id: string, fd: FormData) {
@@ -48,6 +50,21 @@ export async function addSponsorNote(id: string, fd: FormData) {
   const { error } = await s.from('sponsor_notes').insert({ sponsor_id: id, note });
   if (error) throw new Error(error.message);
   revalidatePath(`/sponsors/${id}`);
+}
+
+export async function updateSponsorMeetingDate(id: string, fd: FormData) {
+  await requireAdmin();
+  const s = await createClient();
+  const { error } = await s.from('sponsors').update({
+    meeting_date: String(fd.get('meeting_date') || '') || null,
+  }).eq('id', id);
+  if (error) throw new Error(error.message);
+  revalidatePath(`/sponsors/${id}`);
+  revalidatePath('/sponsors');
+  revalidatePath('/members');
+  revalidatePath('/referrals');
+  revalidatePath('/');
+  revalidatePath('/reports');
 }
 
 export async function updateSponsor(id: string, fd: FormData) {
@@ -66,7 +83,10 @@ export async function updateSponsor(id: string, fd: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath(`/sponsors/${id}`);
   revalidatePath('/sponsors');
+  revalidatePath('/members');
+  revalidatePath('/referrals');
   revalidatePath('/');
+  revalidatePath('/reports');
   redirect(`/sponsors/${id}`);
 }
 

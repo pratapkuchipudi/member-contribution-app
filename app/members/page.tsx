@@ -2,8 +2,9 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { requireAdmin } from '@/lib/auth';
 import { ensureMemberLoginIds } from '@/lib/login-id';
-import { deleteMember } from './[id]/actions';
+import { deleteMember, updateMeetingDate } from './[id]/actions';
 import ConfirmButton from '@/app/confirm-button';
+import MeetingDateForm from '@/app/meeting-date-form';
 import { Money } from '@/app/money';
 
 export default async function Page() {
@@ -35,7 +36,7 @@ export default async function Page() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50">
             <tr>
-              {['Name', 'Login ID', 'Phone', 'Proposed', 'Paid', 'Pending', 'Sponsors', 'Earned', 'Promised Date', 'Status', 'Actions'].map((h) => (
+              {['Name', 'Login ID', 'Phone', 'Proposed', 'Paid', 'Pending', 'Sponsors', 'Earned', 'Date of Meet', 'Promised Date', 'Status', 'Actions'].map((h) => (
                 <th className="px-3 py-2 text-left" key={h}>
                   {h}
                 </th>
@@ -71,6 +72,9 @@ export default async function Page() {
                 </td>
                 <td className="px-3 py-2">
                   <Money value={earned} tone="paid" />
+                </td>
+                <td className="px-3 py-2">
+                  <MeetingDateForm action={updateMeetingDate.bind(null, x.id)} defaultValue={x.meeting_date} compact />
                 </td>
                 <td className="px-3 py-2">{x.proposed_date || '-'}</td>
                 <td className="px-3 py-2">{x.payment_status}</td>

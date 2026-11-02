@@ -15,6 +15,7 @@ export async function createMember(fd: FormData) {
     login_id: loginId,
     proposed_amount: Number(fd.get('proposed_amount') || 0),
     proposed_date: String(fd.get('proposed_date') || '') || null,
+    meeting_date: String(fd.get('meeting_date') || '') || null,
     notes: String(fd.get('notes') || '').trim() || null,
   });
   if (error) throw new Error(error.message);

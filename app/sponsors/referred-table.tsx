@@ -19,7 +19,7 @@ export default function ReferredSponsorsTable({ sponsors }: { sponsors: any[] })
       <table className="min-w-full text-sm">
         <thead className="bg-slate-50">
           <tr>
-            {['Sponsor', 'Expected', 'Earned', 'Pending', 'Payment', 'Status'].map((h) => (
+            {['Sponsor', 'Date of Meet', 'Expected', 'Earned', 'Pending', 'Payment', 'Status'].map((h) => (
               <th className="px-3 py-2 text-left" key={h}>
                 {h}
               </th>
@@ -34,6 +34,7 @@ export default function ReferredSponsorsTable({ sponsors }: { sponsors: any[] })
                   {x.name}
                 </Link>
               </td>
+              <td className="px-3 py-2">{x.meeting_date || '-'}</td>
               <td className="px-3 py-2">
                 <Money value={x.expected_amount} tone="expected" />
               </td>

@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
 import { isAdmin, requireSession } from '@/lib/auth';
-import { deleteSponsor } from './[id]/actions';
+import { deleteSponsor, updateSponsorMeetingDate } from './[id]/actions';
 import ConfirmButton from '@/app/confirm-button';
+import MeetingDateForm from '@/app/meeting-date-form';
 import { Money } from '@/app/money';
 
 export default async function Page() {
@@ -65,7 +66,13 @@ export default async function Page() {
                 <td className="px-3 py-2">
                   <Money value={x.pending_amount} tone="pending" />
                 </td>
-                <td className="px-3 py-2">{x.meeting_date || '-'}</td>
+                <td className="px-3 py-2">
+                  {admin ? (
+                    <MeetingDateForm action={updateSponsorMeetingDate.bind(null, x.id)} defaultValue={x.meeting_date} compact />
+                  ) : (
+                    x.meeting_date || '-'
+                  )}
+                </td>
                 <td className="px-3 py-2">{x.status}</td>
                 {admin ? (
                 <td className="px-3 py-2">
